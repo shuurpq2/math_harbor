@@ -15,8 +15,6 @@ int g_stop_pool = 0;
 pthread_mutex_t g_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t g_pool_cond = PTHREAD_COND_INITIALIZER;
 
-#if defined(__linux__) || defined(__gnu_linux__) || defined(__APPLE__)
-
 void pool_add_task(void (*func)(void*), void* arg) {
     Task* new_task = malloc(sizeof(Task));
     new_task->func = func;
@@ -70,24 +68,38 @@ void* pool_worker(void* arg) {
     return NULL;
 }
 
-__attribute__((constructor))
-void auto_init() {
-    g_num_cores = sysconf(_SC_NPROCESSORS_ONLN);
-    g_num_threads = g_num_cores;
+int math_harbor_init(int num_threads) {
+    pthread_mutex_lock(&g_pool_mutex);
+
+    if (num_threads > 0) {
+        g_num_threads = num_threads;
+    } else {
+        g_num_cores = sysconf(_SC_NPROCESSORS_ONLN);
+        g_num_threads = g_num_cores;
+    }
     g_threads = malloc(g_num_threads * sizeof(pthread_t));
 
-    for (int i = 0; i < g_num_threads; i++) pthread_create(&g_threads[i], NULL, pool_worker, NULL);
+    g_stop_pool = 0;
+
+    for (int i = 0; i < g_num_threads; i++) {
+        pthread_create(&g_threads[i], NULL, pool_worker, NULL);
+    }
+
+    pthread_mutex_unlock(&g_pool_mutex);
+
+    return 0;
 }
 
-__attribute__((destructor)) 
-void auto_free() {
+void math_harbor_free() {
     pthread_mutex_lock(&g_pool_mutex);
     g_stop_pool = 1;
     pthread_mutex_unlock(&g_pool_mutex);
     pthread_cond_broadcast(&g_pool_cond);
 
     if (g_threads != NULL) {
-        for (int i = 0; i < g_num_threads; i++) pthread_join(g_threads[i], NULL);
+        for (int i = 0; i < g_num_threads; i++) {
+            pthread_join(g_threads[i], NULL);
+        }
 
         free(g_threads);
         g_threads = NULL;
@@ -103,8 +115,7 @@ void auto_free() {
     g_task_queue_tail = NULL;
 
     pthread_mutex_unlock(&g_pool_mutex);
+    
     pthread_mutex_destroy(&g_pool_mutex);
     pthread_cond_destroy(&g_pool_cond);
 }
-
-#endif

@@ -7,4 +7,10 @@ typedef struct Task {
     struct Task* next;
 } Task;
 
+int math_harbor_init(int num_threads);
+
+void math_harbor_free();
+
+void pool_add_task(void (*func)(void*), void* arg);
+
 #endif
