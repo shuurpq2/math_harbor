@@ -12,8 +12,10 @@ int g_num_cores = 0;
 int g_num_threads = 0;
 
 int g_stop_pool = 0;
+int g_tasks_remaining = 0;
 pthread_mutex_t g_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t g_pool_cond = PTHREAD_COND_INITIALIZER;
+pthread_cond_t g_pool_has_tasks = PTHREAD_COND_INITIALIZER;
+pthread_cond_t g_pool_finished = PTHREAD_COND_INITIALIZER;
 
 void pool_add_task(void (*func)(void*), void* arg) {
     Task* new_task = malloc(sizeof(Task));
@@ -31,7 +33,19 @@ void pool_add_task(void (*func)(void*), void* arg) {
         g_task_queue_tail = new_task;
     }
 
-    pthread_cond_signal(&g_pool_cond);
+    g_tasks_remaining++;
+
+    pthread_cond_signal(&g_pool_has_tasks);
+
+    pthread_mutex_unlock(&g_pool_mutex);
+}
+
+void pool_wait() {
+    pthread_mutex_lock(&g_pool_mutex);
+
+    while (g_tasks_remaining > 0) {
+        pthread_cond_wait(&g_pool_finished, &g_pool_mutex);
+    }
 
     pthread_mutex_unlock(&g_pool_mutex);
 }
@@ -43,7 +57,7 @@ void* pool_worker(void* arg) {
         pthread_mutex_lock(&g_pool_mutex);
 
         while(g_task_queue_head == NULL && g_stop_pool == 0) { 
-            pthread_cond_wait(&g_pool_cond, &g_pool_mutex);
+            pthread_cond_wait(&g_pool_has_tasks, &g_pool_mutex);
         }
 
         if (g_stop_pool) {
@@ -62,6 +76,16 @@ void* pool_worker(void* arg) {
 
         task->func(task->arg);
         free(task);
+
+        pthread_mutex_lock(&g_pool_mutex);
+
+        g_tasks_remaining--;
+
+        if (g_tasks_remaining == 0) {
+            pthread_cond_broadcast(&g_pool_finished);
+        }
+
+        pthread_mutex_unlock(&g_pool_mutex);
         
     }
 
@@ -91,10 +115,12 @@ int math_harbor_init(int num_threads) {
 }
 
 void math_harbor_free() {
+    pool_wait();
+
     pthread_mutex_lock(&g_pool_mutex);
     g_stop_pool = 1;
     pthread_mutex_unlock(&g_pool_mutex);
-    pthread_cond_broadcast(&g_pool_cond);
+    pthread_cond_broadcast(&g_pool_has_tasks);
 
     if (g_threads != NULL) {
         for (int i = 0; i < g_num_threads; i++) {
@@ -117,5 +143,6 @@ void math_harbor_free() {
     pthread_mutex_unlock(&g_pool_mutex);
     
     pthread_mutex_destroy(&g_pool_mutex);
-    pthread_cond_destroy(&g_pool_cond);
+    pthread_cond_destroy(&g_pool_has_tasks);
+    pthread_cond_destroy(&g_pool_finished);
 }

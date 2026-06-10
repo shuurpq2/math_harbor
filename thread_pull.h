@@ -13,4 +13,8 @@ void math_harbor_free();
 
 void pool_add_task(void (*func)(void*), void* arg);
 
+void pool_wait();
+
+extern int g_num_threads;
+
 #endif
