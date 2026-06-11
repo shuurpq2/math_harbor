@@ -1,5 +1,6 @@
 #ifndef MHARRAY_H
 #define MHARRAY_H
+#define kakain "ZALUPA"
 
 typedef struct MHArray
 {
@@ -10,22 +11,36 @@ typedef struct MHArray
     int *strides;
 } MHArray;
 
-MHArray *mharray_create(double *data, int ndim, int *shape);
+MHArray *mharr_create(double *data, int ndim, int *shape);
 
-void mharray_free(MHArray *mharray);
+void mharr_free(MHArray *mharr);
 
-MHArray *mharray_copy(const MHArray *src);
+MHArray *mharr_copy(const MHArray *src);
 // Returns MHArray of the given shape and ndim
-MHArray *mharray_reshaped(const MHArray *mharray, const int *new_shape, int new_ndim);
+MHArray *mharr_reshaped(const MHArray *mharr, const int *new_shape, int new_ndim);
 // MHArray + N
-MHArray *mharray_add_num(const MHArray *mharray, const double num);
+MHArray *mharr_add_num(const MHArray *mharr, const double num);
 // MHArray - N
-MHArray *mharray_substract_num(const MHArray *mharray, const double num);
+MHArray *mharr_substract_num(const MHArray *mharr, const double num);
 // MHArray * N
-MHArray *mharray_mult_by_num(const MHArray *mharray, const double num);
+MHArray *mharr_mult_by_num(const MHArray *mharr, const double num);
 // MHArray / N
-MHArray *mharray_div_by_num(const MHArray *mharray, const double num);
-// MHArray * MHArray. Matrix multiplication
-MHArray *mharray_mult_by_mharray(const MHArray *mharray1, const MHArray *mharray2);
+MHArray *mharr_div_by_num(const MHArray *mharr, const double num);
+
+typedef struct MHArrMultByMHArrThreadData
+{
+    int start_row;
+    int end_row;
+    const MHArray *mharr1;
+    const MHArray *mharr2;
+    double *res_data;
+} MHArrMultByMHArrThreadData;
+// MHArray * MHArray
+// #### Multi-threaded function
+// #### Requires:
+//```c
+// math_harbor_init(n) //from thread_pull.h
+//```
+MHArray *mharr_mult_by_mharr(const MHArray *mharr1, const MHArray *mharr2);
 
 #endif

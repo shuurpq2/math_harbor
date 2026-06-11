@@ -1,12 +1,13 @@
 #include "mharray.h"
 #include "thread_pull.h"
-#include "debug.h"
+#include "default.h"
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
-MHArray *mharray_create(double *data, int ndim, int *shape)
+MHArray *mharr_create(double *data, int ndim, int *shape)
 {
-    MH_DEBUG_PRINT("Function \"mharray_create\" start\n");
+    MH_DEBUG_PRINT("Function \"mharr_create\" start\n");
 
     MHArray *result = malloc(sizeof(MHArray));
 
@@ -32,45 +33,45 @@ MHArray *mharray_create(double *data, int ndim, int *shape)
     result->data = malloc(result->size * sizeof(double));
     memcpy(result->data, data, result->size * sizeof(double));
 
-    MH_DEBUG_PRINT("Function \"mharray_create\" end\n");
+    MH_DEBUG_PRINT("Function \"mharr_create\" end\n");
 
     return result;
 }
 
-void mharray_free(MHArray *mharray)
+void mharr_free(MHArray *mharr)
 {
-    MH_DEBUG_PRINT("Function \"mharray_free\" start\n");
+    MH_DEBUG_PRINT("Function \"mharr_free\" start\n");
 
-    if (mharray->data != NULL)
+    if (mharr->data != NULL)
     {
-        free(mharray->data);
+        free(mharr->data);
     }
 
-    if (mharray->shape != NULL)
+    if (mharr->shape != NULL)
     {
-        free(mharray->shape);
+        free(mharr->shape);
     }
 
-    if (mharray->strides != NULL)
+    if (mharr->strides != NULL)
     {
-        free(mharray->strides);
+        free(mharr->strides);
     }
 
-    free(mharray);
+    free(mharr);
 
-    MH_DEBUG_PRINT("Function \"mharray_free\" end\n");
+    MH_DEBUG_PRINT("Function \"mharr_free\" end\n");
 }
 
-MHArray *mharray_reshaped(const MHArray *mharray, const int *new_shape, int new_ndim)
+MHArray *mharr_reshaped(const MHArray *mharr, const int *new_shape, int new_ndim)
 {
-    MH_DEBUG_PRINT("Function \"mharray_reshape\" start\n");
+    MH_DEBUG_PRINT("Function \"mharr_reshape\" start\n");
 
     if (new_ndim < 1)
     {
-        new_ndim = mharray->ndim;
+        new_ndim = mharr->ndim;
     }
 
-    MHArray *result = mharray_copy(mharray);
+    MHArray *result = mharr_copy(mharr);
     result->ndim = new_ndim;
     result->shape = realloc(result->shape, new_ndim * sizeof(int));
     result->strides = realloc(result->strides, new_ndim * sizeof(int));
@@ -88,140 +89,184 @@ MHArray *mharray_reshaped(const MHArray *mharray, const int *new_shape, int new_
         }
     }
 
-    if (new_shape_mult != mharray->size)
+    if (new_shape_mult != mharr->size)
     {
         fprintf(stderr, "Impossible to reshape\n");
         exit(1);
     }
 
-    MH_DEBUG_PRINT("Function \"mharray_reshape\" end\n");
+    MH_DEBUG_PRINT("Function \"mharr_reshape\" end\n");
 
     return result;
 }
 
-MHArray *mharray_copy(const MHArray *src)
+MHArray *mharr_copy(const MHArray *src)
 {
-    MH_DEBUG_PRINT("Function \"mharray_copy\" start\n");
+    MH_DEBUG_PRINT("Function \"mharr_copy\" start\n");
 
-    MHArray *result = mharray_create(src->data, src->ndim, src->shape);
+    MHArray *result = mharr_create(src->data, src->ndim, src->shape);
 
-    MH_DEBUG_PRINT("Function \"mharray_copy\" end\n");
+    MH_DEBUG_PRINT("Function \"mharr_copy\" end\n");
 
     return result;
 }
 
-MHArray *mharray_add_num(const MHArray *mharray, const double num)
+MHArray *mharr_add_num(const MHArray *mharr, const double num)
 {
-    MH_DEBUG_PRINT("Function \"mharray_add_num\" start\n");
+    MH_DEBUG_PRINT("Function \"mharr_add_num\" start\n");
 
-    MHArray *result = mharray_copy(mharray);
+    MHArray *result = mharr_copy(mharr);
 
-    for (int i = 0; i < mharray->size; i++)
+    for (int i = 0; i < mharr->size; i++)
     {
-        result->data[i] = mharray->data[i] + num;
+        result->data[i] = mharr->data[i] + num;
     }
 
-    MH_DEBUG_PRINT("Function \"mharray_add_num\" end\n");
+    MH_DEBUG_PRINT("Function \"mharr_add_num\" end\n");
 
     return result;
 }
 
-MHArray *mharray_substract_num(const MHArray *mharray, const double num)
+MHArray *mharr_substract_num(const MHArray *mharr, const double num)
 {
-    MH_DEBUG_PRINT("Function \"mharray_substract_num\" start\n");
+    MH_DEBUG_PRINT("Function \"mharr_substract_num\" start\n");
 
-    MHArray *result = mharray_copy(mharray);
+    MHArray *result = mharr_copy(mharr);
 
-    for (int i = 0; i < mharray->size; i++)
+    for (int i = 0; i < mharr->size; i++)
     {
-        result->data[i] = mharray->data[i] - num;
+        result->data[i] = mharr->data[i] - num;
     }
 
-    MH_DEBUG_PRINT("Function \"mharray_substract_num\" end\n");
+    MH_DEBUG_PRINT("Function \"mharr_substract_num\" end\n");
 
     return result;
 }
 
-MHArray *mharray_mult_by_num(const MHArray *mharray, const double num)
+MHArray *mharr_mult_by_num(const MHArray *mharr, const double num)
 {
-    MH_DEBUG_PRINT("Function \"mharray_mult_by_num\" start\n");
+    MH_DEBUG_PRINT("Function \"mharr_mult_by_num\" start\n");
 
-    MHArray *result = mharray_copy(mharray);
+    MHArray *result = mharr_copy(mharr);
 
-    for (int i = 0; i < mharray->size; i++)
+    for (int i = 0; i < mharr->size; i++)
     {
-        result->data[i] = mharray->data[i] * num;
+        result->data[i] = mharr->data[i] * num;
     }
 
-    MH_DEBUG_PRINT("Function \"mharray_mult_by_num\" end\n");
+    MH_DEBUG_PRINT("Function \"mharr_mult_by_num\" end\n");
 
     return result;
 }
 
-MHArray *mharray_div_by_num(const MHArray *mharray, const double num)
+MHArray *mharr_div_by_num(const MHArray *mharr, const double num)
 {
-    MH_DEBUG_PRINT("Function \"mharray_div_by_num\" start\n");
+    MH_DEBUG_PRINT("Function \"mharr_div_by_num\" start\n");
 
-    MHArray *result = mharray_copy(mharray);
+    MHArray *result = mharr_copy(mharr);
 
-    for (int i = 0; i < mharray->size; i++)
+    for (int i = 0; i < mharr->size; i++)
     {
-        result->data[i] = mharray->data[i] / num;
+        result->data[i] = mharr->data[i] / num;
     }
 
-    MH_DEBUG_PRINT("Function \"mharray_div_by_num\" end\n");
+    MH_DEBUG_PRINT("Function \"mharr_div_by_num\" end\n");
 
     return result;
 }
 
-MHArray *mharray_mult_by_mharray(const MHArray *mharray1, const MHArray *mharray2)
+void mharr_mult_by_mharr_action(void *arg)
 {
-    MH_DEBUG_PRINT("Function \"mharray_mult_by_mharray\" start\n");
+    MHArrMultByMHArrThreadData *data = (MHArrMultByMHArrThreadData *)arg;
 
-    int mharray1_2d_shape[] = {1, mharray1->shape[mharray1->ndim - 1]};
-    int mharray2_2d_shape[] = {1, mharray2->shape[mharray2->ndim - 1]};
+    int mharr1_2d_cols = data->mharr1->shape[data->mharr1->ndim - 1];
+    int mharr2_2d_cols = data->mharr2->shape[data->mharr2->ndim - 1];
 
-    for (int i = 0; i < mharray1->ndim - 1; i++)
+    for (int i = data->start_row; i < data->end_row; i++)
     {
-        mharray1_2d_shape[0] *= mharray1->shape[i];
+        for (int k = 0; k < mharr1_2d_cols; k++)
+        {
+            for (int j = 0; j < mharr2_2d_cols; j++)
+            {
+                data->res_data[i * mharr2_2d_cols + j] += data->mharr1->data[i * mharr1_2d_cols + k] * data->mharr2->data[k * mharr2_2d_cols + j];
+            }
+        }
     }
-    for (int i = 0; i < mharray2->ndim - 1; i++)
+}
+
+void mharr_mult_by_mharr_start_threads(const MHArray *mharr1, int mharr1_2d_shape[2], const MHArray *mharr2, const int mharr2_2d_shape[2], double *res_data)
+{
+    int rows_per_thread = MAX(mharr1_2d_shape[0] / g_num_threads, 1);
+    int num_tasks = MIN(mharr1_2d_shape[0], g_num_threads);
+
+    MHArrMultByMHArrThreadData **args = malloc(num_tasks * sizeof(MHArrMultByMHArrThreadData *));
+
+    for (int i = 0; i < num_tasks; i++)
     {
-        mharray2_2d_shape[0] *= mharray2->shape[i];
+        args[i] = malloc(sizeof(MHArrMultByMHArrThreadData));
+        args[i]->mharr1 = mharr1;
+        args[i]->mharr2 = mharr2;
+        args[i]->res_data = res_data;
+        args[i]->start_row = i * rows_per_thread;
+        if (i < num_tasks - 1)
+        {
+            args[i]->end_row = args[i]->start_row + rows_per_thread;
+        }
+        else
+        {
+            args[i]->end_row = mharr1_2d_shape[0];
+        }
+
+        pool_add_task(&mharr_mult_by_mharr_action, (void *)args[i]);
     }
 
-    if (mharray1_2d_shape[1] != mharray2_2d_shape[0])
+    pool_wait();
+
+    for (int i = 0; i < num_tasks; i++)
+    {
+        free(args[i]);
+    }
+    free(args);
+}
+
+MHArray *mharr_mult_by_mharr(const MHArray *mharr1, const MHArray *mharr2)
+{
+    MH_DEBUG_PRINT("Function \"mharr_mult_by_mharr\" start\n");
+
+    int mharr1_2d_shape[] = {1, mharr1->shape[mharr1->ndim - 1]};
+    int mharr2_2d_shape[] = {1, mharr2->shape[mharr2->ndim - 1]};
+
+    for (int i = 0; i < mharr1->ndim - 1; i++)
+    {
+        mharr1_2d_shape[0] *= mharr1->shape[i];
+    }
+    for (int i = 0; i < mharr2->ndim - 1; i++)
+    {
+        mharr2_2d_shape[0] *= mharr2->shape[i];
+    }
+
+    if (mharr1_2d_shape[1] != mharr2_2d_shape[0])
     {
         fprintf(stderr, "Impossible to multiply MHArray (%d, %d) and MHArray (%d, %d)\n",
-                mharray1_2d_shape[0], mharray1_2d_shape[1], mharray2_2d_shape[0], mharray2_2d_shape[1]);
+                mharr1_2d_shape[0], mharr1_2d_shape[1], mharr2_2d_shape[0], mharr2_2d_shape[1]);
 
         exit(1);
     }
 
-    int *result_shape = malloc(mharray1->ndim * sizeof(int));
-    memcpy(result_shape, mharray1->shape, (mharray1->ndim - 1) * sizeof(int));
-    result_shape[mharray1->ndim - 1] = mharray2->shape[mharray2->ndim - 1];
+    int *result_shape = malloc(mharr1->ndim * sizeof(int));
+    memcpy(result_shape, mharr1->shape, (mharr1->ndim - 1) * sizeof(int));
+    result_shape[mharr1->ndim - 1] = mharr2->shape[mharr2->ndim - 1];
 
-    int result_2d_shape[] = {mharray1_2d_shape[0], mharray2_2d_shape[1]};
-    double *result_data = calloc(result_2d_shape[0] * result_2d_shape[1], sizeof(double));
+    double *res_data = calloc(mharr1_2d_shape[0] * mharr2_2d_shape[1], sizeof(double));
 
-    for (int i = 0; i < result_2d_shape[0]; i++)
-    {
-        for (int k = 0; k < mharray1_2d_shape[1]; k++)
-        {
-            for (int j = 0; j < result_2d_shape[1]; j++)
-            {
-                result_data[i * result_2d_shape[1] + j] += mharray1->data[i * mharray1_2d_shape[1] + k] * mharray2->data[k * mharray2_2d_shape[1] + j];
-            }
-        }
-    }
+    mharr_mult_by_mharr_start_threads(mharr1, mharr1_2d_shape, mharr2, mharr2_2d_shape, res_data);
 
-    MHArray *result = mharray_create(result_data, mharray1->ndim, result_shape);
+    MHArray *result = mharr_create(res_data, mharr1->ndim, result_shape);
 
-    free(result_data);
+    free(res_data);
     free(result_shape);
 
     return result;
 
-    MH_DEBUG_PRINT("Function \"mharray_mult_by_mharray\" end\n");
+    MH_DEBUG_PRINT("Function \"mharr_mult_by_mharr\" end\n");
 }
