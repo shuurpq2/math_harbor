@@ -10,18 +10,20 @@ typedef struct
     int *strides;
 } MHArray;
 
-MHArray *create_mharray(double *data, int size, int ndim, int *shape);
+MHArray *mharray_create(double *data, int size, int ndim, int *shape);
 
-void free_mharray(MHArray *mharray);
+void mharray_free(MHArray *mharray);
 
-MHArray *copy_mharray(const MHArray *src);
-
+MHArray *mharray_copy(const MHArray *src);
+// Returns MHArray of the given shape and ndim
+MHArray *mharray_reshaped(const MHArray *mharray, const int *new_shape, int new_ndim);
+// MHArray + N
 MHArray *mharray_add_num(const MHArray *mharray, const double num);
-
+// MHArray - N
 MHArray *mharray_substract_num(const MHArray *mharray, const double num);
-
+// MHArray * N
 MHArray *mharray_mult_by_num(const MHArray *mharray, const double num);
-
+// MHArray / N
 MHArray *mharray_div_by_num(const MHArray *mharray, const double num);
 
 #endif
