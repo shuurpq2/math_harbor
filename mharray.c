@@ -163,6 +163,12 @@ MHArray *mharr_div_by_num(const MHArray *mharr, const double num)
 {
     MH_DEBUG_PRINT("Function \"mharr_div_by_num\" start\n");
 
+    if (num == 0)
+    {
+        fprintf(stderr, "Zero division");
+        exit(1);
+    }
+
     MHArray *result = mharr_copy(mharr);
 
     for (int i = 0; i < mharr->size; i++)

@@ -2,6 +2,7 @@
 #define MH_DEFAULT_H
 
 #include "debug.h"
+#include "assert.h"
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) < (b) ? (b) : (a))
