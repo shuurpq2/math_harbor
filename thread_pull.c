@@ -1,4 +1,5 @@
 #include "thread_pull.h"
+#include "debug.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -18,6 +19,8 @@ pthread_cond_t g_pool_has_tasks = PTHREAD_COND_INITIALIZER;
 pthread_cond_t g_pool_finished = PTHREAD_COND_INITIALIZER;
 
 void pool_add_task(void (*func)(void*), void* arg) {
+    MH_DEBUG_PRINT("Function \"pool_add_task\" start\n");
+
     Task* new_task = malloc(sizeof(Task));
     new_task->func = func;
     new_task->arg = arg;
@@ -38,9 +41,13 @@ void pool_add_task(void (*func)(void*), void* arg) {
     pthread_cond_signal(&g_pool_has_tasks);
 
     pthread_mutex_unlock(&g_pool_mutex);
+
+    MH_DEBUG_PRINT("Function \"pool_add_task\" end\n");
 }
 
 void pool_wait() {
+    MH_DEBUG_PRINT("Function \"pool_wait\" start\n");
+
     pthread_mutex_lock(&g_pool_mutex);
 
     while (g_tasks_remaining > 0) {
@@ -48,6 +55,8 @@ void pool_wait() {
     }
 
     pthread_mutex_unlock(&g_pool_mutex);
+
+    MH_DEBUG_PRINT("Function \"pool_wait\" end\n");
 }
 
 void* pool_worker(void* arg) {
@@ -93,6 +102,8 @@ void* pool_worker(void* arg) {
 }
 
 int math_harbor_init(int num_threads) {
+    MH_DEBUG_PRINT("Function \"math_harbor_init\" start\n");
+
     pthread_mutex_lock(&g_pool_mutex);
 
     if (num_threads > 0) {
@@ -111,10 +122,14 @@ int math_harbor_init(int num_threads) {
 
     pthread_mutex_unlock(&g_pool_mutex);
 
+    MH_DEBUG_PRINT("Function \"math_harbor_init\" end\n");
+
     return 0;
 }
 
 void math_harbor_free() {
+    MH_DEBUG_PRINT("Function \"math_harbor_free\" start\n");
+
     pool_wait();
 
     pthread_mutex_lock(&g_pool_mutex);
@@ -145,4 +160,6 @@ void math_harbor_free() {
     pthread_mutex_destroy(&g_pool_mutex);
     pthread_cond_destroy(&g_pool_has_tasks);
     pthread_cond_destroy(&g_pool_finished);
+
+    MH_DEBUG_PRINT("Function \"math_harbor_free\" end\n");
 }
